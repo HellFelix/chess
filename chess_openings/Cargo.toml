@@ -1,0 +1,9 @@
+[package]
+name = "chess_openings"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pgn_parser = "0.2.2"
+sqlite = "0.36.1"
+chess_backend = { path = "../chess_backend" }
