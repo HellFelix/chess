@@ -1,10 +1,4 @@
 #include "knight.h"
-/***************************************\
-              Credits to
-            Code Moneky King
-\**************************************/
-
-// headers
 #include <stdio.h>
 
 // define bitboard type

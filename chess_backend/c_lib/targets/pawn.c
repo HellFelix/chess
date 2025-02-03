@@ -1,10 +1,4 @@
 #include "pawn.h"
-/***************************************\
-              Credit to
-            Code Moneky King
-\**************************************/
-
-// headers
 #include <stdio.h>
 
 // bit manipulation macros

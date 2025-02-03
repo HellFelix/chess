@@ -1,5 +1,5 @@
 # Chess Backend
-Backend library for board representaton and move generation using bitboard logic.
+Backend library for board representaton and move generation using standard bitboard logic.
 
 ### Bindgen
 Note that because the low level board representation is written in C (along with some of the target 
@@ -28,9 +28,64 @@ This is all the information about a game of chess that the engine requires to fi
 Note that because `Board` implements `Copy`, the performance cost for copying boards between scopes is low which 
 allows for move generation to copy boards and mutate them rather than building them from scratch.
 
-`Board` implements Display which allows for printing the board from standard POV (first row down, first rank left).
+`Board` implements `Display` which allows for printing the board from standard POV (first row down, first rank left).
+Note that using this method of displaying the board will also show side to move, the board killer square (if there is one), the halfmove clock, and the fullmove counter.
+For instance, the standard starting position will be displayed as:
+```
+♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+♟︎ ♟︎ ♟︎ ♟︎ ♟︎ ♟︎ ♟︎ ♟︎
+♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
+White to move
+Board has no killer square
+Board halfmove clock is 0
+Board fullmove is 1
+```
+and after `1. e4` it will be displayed as:
+```
+♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
+♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
+. . . . . . . .
+. . . . . . . .
+. . . . ♟︎ . . .
+. . . . . . . .
+♟︎ ♟︎ ♟︎ ♟︎ . ♟︎ ♟︎ ♟︎
+♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
+Black to move
+Board has killer square e3
+Board halfmove clock is 1
+Board fullmove is 1
+```
 
-There is also a public `BitBoard` abstraction struct used mostly for debugging that implements Display.
+### BitBoard
+There is also a public `BitBoard` abstraction struct used mostly for debugging that implements `Display`. 
+Displaying the `BitBoard` instances for the white occupancy for the boards above will yield:
+```
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+```
+and
+```
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . 1 . . .
+. . . . . . . .
+1 1 1 1 . 1 1 1
+1 1 1 1 1 1 1 1
+```
+respectively.
 
 ## Move generation
 
@@ -41,6 +96,9 @@ would put the king in check or leave the king in check)
 Legality checking is applied first afterward, checking if king is attacked, castling is legal (i.e king's path is not 
 attacked or blocked by any pieces. If castling rights are true, pseudo-legal move generation will assume that castling 
 is allowed), and that pawns are not on any of the back ranks.
+
+Some of the target generation within the [C library](./c_lib/targets/) is based on code from 
+[Code Monkey King](https://github.com/maksimKorzh/chess_programming/).
 
 
 ## FEN
