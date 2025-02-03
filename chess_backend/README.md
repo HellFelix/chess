@@ -1,6 +1,8 @@
 # Chess Backend
 Backend library for board representaton and move generation using standard bitboard logic.
 
+This is a low level representation of chessboards that require minimal external libraries. The only dependencies for this crate are build-dependencies used for compiling C.
+
 ### Bindgen
 Note that because the low level board representation is written in C (along with some of the target 
 generation), This crate uses [bindgen](https://github.com/rust-lang/rust-bindgen) to generate bindings 
