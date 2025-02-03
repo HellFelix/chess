@@ -2,6 +2,13 @@ use const_for::const_for;
 
 use chess_backend::*;
 
+pub const KNIGHT_ATTACK: i32 = 40;
+pub const BISHIP_ATTACK: i32 = 45;
+pub const ROOK_ATTACK: i32 = 50;
+pub const QUEEN_ATTACK: i32 = 60;
+pub const ACTIVE_ATTACK_MOD: i32 = 3;
+pub const PASSIVE_ATTACK_MOD: i32 = 1;
+
 const fn CONVERT_TO_USIZE(input: [i32; 64]) -> [usize; 64] {
     let mut res = [0; 64];
     const_for!(i in 0..64 => {

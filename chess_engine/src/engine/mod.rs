@@ -19,7 +19,11 @@ const DB_PATH: &str = "openings.db";
 use chess_backend::{Board, Colour, GameState, SanMove};
 use threadpool::ThreadPool;
 use tree::Branch;
-use utils::{error::EngineError, eval::Eval, phase::GamePhase};
+use utils::{
+    error::EngineError,
+    eval::Eval,
+    phase::{self, GamePhase},
+};
 
 pub mod heuristics;
 mod opening_book;
@@ -36,7 +40,7 @@ pub enum Player {
     Engine,
 }
 
-const PRELIMINARY_TIME_SHARE: f32 = 1.;
+const PRELIMINARY_TIME_SHARE: f32 = 0.5;
 
 pub struct EngineController {
     white: Player,
@@ -57,6 +61,7 @@ impl EngineController {
         board: Board,
         n_workers: usize,
         time_limit: Duration,
+        phase: Option<GamePhase>,
     ) -> Self {
         Self {
             white,
@@ -65,7 +70,7 @@ impl EngineController {
             board,
             n_workers,
             db_conn: get_db_connection(),
-            phase: None,
+            phase,
         }
     }
     pub fn pick_move(&mut self, time_limit: Duration) {
@@ -174,7 +179,6 @@ type WorkerRes = (
     Option<(Branch, Vec<usize>, bool)>,
     (Option<Vec<usize>>, WorkerType),
 );
-const SEARCHERS: usize = 8;
 
 #[derive(Debug)]
 struct Engine {
@@ -220,6 +224,7 @@ impl Engine {
             }
         } else {
             // Likely the first search, meaning the phase has yet to be determined
+            info!("Likely first");
             self.search(prel_search_limit, deep_search_limit)
         }
     }
@@ -248,7 +253,7 @@ impl Engine {
                 debug!("Incomplete");
                 panic!("Failed to analyze position");
             };
-            branch.show_branch(0);
+            //branch.show_branch(0);
             res
         } else {
             panic!("Failed to read branch");
@@ -261,7 +266,7 @@ impl Engine {
             debug!("Found tree");
             let mut children = tree.children.iter().enumerate();
 
-            let mut res = vec![vec![]; self.n_workers];
+            let mut res = vec![vec![]; self.n_workers.min(children.len())];
             let mut current = 0;
             while let Some((i, _branch)) = children.next() {
                 res[current].push(vec![i]);
@@ -342,6 +347,9 @@ impl Engine {
                 }
                 let (next, _worker) = worker_res;
                 let next_worker = if let WorkerType::DeepSearch((locations, i)) = _worker {
+                    if next == Some(vec![]) {
+                        continue;
+                    }
                     let next_i = if i + 1 == locations.len() { 0 } else { i + 1 };
                     WorkerType::DeepSearch((locations, next_i))
                 } else {
@@ -358,35 +366,35 @@ impl Engine {
 
                 if start_time.elapsed().unwrap() > time_limit {
                     // When an answer has been demanded, let the current threads finish
-                    debug!("Joining workers");
-                    self.workers.join();
                     break 'search_loop;
                 }
             }
         }
+        info!("Joining workers");
+        self.workers.join();
     }
 
-    // divides the main tree into the branches that each deep searcher will cover
-    fn divide_tree(&self) -> Vec<Vec<usize>> {
-        let mut claimed = Vec::new();
-        if let Ok(branch) = self.branch.read() {
-            for _ in 0..SEARCHERS {
-                claimed.push(vec![
-                    branch
-                        .alpha_beta_search_priority(
-                            branch.board.side_to_move() == Colour::White,
-                            &vec![],
-                            Eval::NegInfinity,
-                            Eval::Infinity,
-                            &claimed,
-                        )
-                        .1[0],
-                ])
-            }
-        }
-        info!("{claimed:?}");
-        claimed
-    }
+    // // divides the main tree into the branches that each deep searcher will cover
+    // fn divide_tree(&self) -> Vec<Vec<usize>> {
+    //     let mut claimed = Vec::new();
+    //     if let Ok(branch) = self.branch.read() {
+    //         for _ in 0..SEARCHERS {
+    //             claimed.push(vec![
+    //                 branch
+    //                     .alpha_beta_search_priority(
+    //                         branch.board.side_to_move() == Colour::White,
+    //                         &vec![],
+    //                         Eval::NegInfinity,
+    //                         Eval::Infinity,
+    //                         &claimed,
+    //                     )
+    //                     .1[0],
+    //             ])
+    //         }
+    //     }
+    //     info!("{claimed:?}");
+    //     claimed
+    // }
 
     fn add_find_only(&self, worker_type: WorkerType) {
         let tx = self.sender_model.clone();
