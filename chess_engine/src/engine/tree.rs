@@ -2,7 +2,7 @@ use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex};
 
 use chess_backend::{to_str, Board, ChessMove, Colour, MoveType, Piece};
-use log::{debug, error};
+use log::{debug, error, info};
 
 use crate::engine::utils::eval::Eval;
 use crate::engine::utils::phase::GamePhase;
@@ -10,6 +10,7 @@ use crate::engine::utils::phase::GamePhase;
 #[derive(Debug, Clone)]
 pub struct Branch {
     pub board: Board,
+    pub game_over: bool,
     pub _res_move: Option<ChessMove>, // debug purposes only
     pub eval: Option<Eval>,
     pub phase: Option<GamePhase>,
@@ -37,6 +38,9 @@ impl Branch {
 
     pub fn run_node(&mut self, depth: usize) {
         debug!("Running node");
+        if let Some(Eval::Mate(_, _)) = self.eval {
+            info!("Evaluating mate");
+        }
         self.is_terminal = false;
         for child in &mut self.children {
             child.eval_node(Some(self.board), depth + 1);
@@ -63,7 +67,11 @@ impl Branch {
         let mut depth = 0;
         if self.is_terminal {
             debug!("Found terminal");
-            return Some(relative_location.clone());
+            if let Some(Eval::Numeric(_n)) = self.eval {
+                if !self.game_over {
+                    return Some(relative_location.clone());
+                }
+            }
         }
         loop {
             if let Some(res) = self.find_terminal_level(depth, relative_location) {
@@ -94,8 +102,10 @@ impl Branch {
             for (i, child) in self.children.iter().enumerate() {
                 let mut location = relative_location.clone();
                 location.push(i);
-                if child.is_terminal {
-                    return Some(location);
+                if child.is_terminal && !child.game_over {
+                    if let Some(Eval::Numeric(_n)) = child.eval {
+                        return Some(location);
+                    }
                 }
             }
         }
@@ -104,7 +114,11 @@ impl Branch {
 
     pub fn search_absolute_priority(&self, relative_location: &[usize]) -> (Eval, Vec<usize>) {
         if self.is_terminal {
-            (self.priority.unwrap(), relative_location.into())
+            if let Some(Eval::Numeric(_n)) = self.eval {
+                (self.priority.unwrap(), relative_location.into())
+            } else {
+                (Eval::NegInfinity, vec![])
+            }
         } else {
             let mut highest_prio = Eval::NegInfinity;
             let mut highest_location = vec![];
@@ -310,6 +324,7 @@ impl Branch {
     pub fn from_parent(&self, m: ChessMove, depth: usize) -> Self {
         Self {
             board: m.board,
+            game_over: false,
             _res_move: Some(m),
             eval: None,
             phase: self.phase,
@@ -323,6 +338,7 @@ impl From<Board> for Branch {
     fn from(value: Board) -> Self {
         Self {
             board: value,
+            game_over: false,
             _res_move: None,
             eval: None,
             phase: None,
@@ -336,6 +352,7 @@ impl Default for Branch {
     fn default() -> Self {
         Self {
             board: Board::default(),
+            game_over: false,
             _res_move: None,
             eval: None,
             phase: Some(GamePhase::Opening(1)),

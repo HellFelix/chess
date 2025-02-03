@@ -60,8 +60,10 @@ impl Branch {
 
         self.eval_pieces(&white_pieces, &black_pieces, &mut eval_data);
 
-        eval_mg += (eval_data.mg_mobility[0] - eval_data.mg_mobility[1]);
-        eval_eg += (eval_data.eg_mobility[0] - eval_data.eg_mobility[1]);
+        res += Self::eval_pawn_atttacks(self.board, &white_pieces, &black_pieces);
+
+        eval_mg += eval_data.mg_mobility[0] - eval_data.mg_mobility[1];
+        eval_eg += eval_data.eg_mobility[0] - eval_data.eg_mobility[1];
 
         eval_data.game_phase = if eval_data.game_phase > 24 {
             24
@@ -70,13 +72,13 @@ impl Branch {
         };
 
         let mg_weight = eval_data.game_phase;
-        let eg_weight = (24 - eval_data.game_phase);
+        let eg_weight = 24 - eval_data.game_phase;
 
         res += ((eval_mg * mg_weight) + (eval_eg * eg_weight)) / 24;
 
-        res += (eval_data.blockages[0] - eval_data.blockages[1]);
-        res += (eval_data.positional_themes[0] - eval_data.positional_themes[1]);
-        res += (eval_data.material_adjustement[0] - eval_data.material_adjustement[1]);
+        res += eval_data.blockages[0] - eval_data.blockages[1];
+        res += eval_data.positional_themes[0] - eval_data.positional_themes[1];
+        res += eval_data.material_adjustement[0] - eval_data.material_adjustement[1];
 
         if eval_data.attack_count[0] < 2 || white_pieces.queens.len() == 0 {
             eval_data.attack_weight[0] = 0;
@@ -89,6 +91,64 @@ impl Branch {
             - SAFETY_TABLE[eval_data.attack_weight[1] as usize];
 
         Eval::Numeric(res as f32)
+    }
+
+    fn eval_pawn_atttacks(res_board: Board, white_pieces: &Pieces, black_pieces: &Pieces) -> i32 {
+        let mut res = 0;
+
+        let (mod_white, mod_black) = if res_board.side_to_move() == Colour::White {
+            (ACTIVE_ATTACK_MOD, PASSIVE_ATTACK_MOD)
+        } else {
+            (PASSIVE_ATTACK_MOD, ACTIVE_ATTACK_MOD)
+        };
+
+        res += mod_white
+            * Self::pawn_piece_attacks(res_board, Colour::White, white_pieces, black_pieces);
+        res -= mod_black
+            * Self::pawn_piece_attacks(res_board, Colour::Black, white_pieces, black_pieces);
+
+        res
+    }
+
+    fn pawn_piece_attacks(
+        res_board: Board,
+        colour: Colour,
+        white_pieces: &Pieces,
+        black_pieces: &Pieces,
+    ) -> i32 {
+        let mut res = 0;
+        let (pieces, other_pieces) = if colour == Colour::White {
+            (white_pieces, black_pieces)
+        } else {
+            (black_pieces, white_pieces)
+        };
+        let occupancy = res_board.base.black_occupied + res_board.base.white_occupied;
+
+        for square in &pieces.pawns {
+            let attacked =
+                unsafe { wrap_extract_squares(pawnTargets(*square, colour.as_int(), occupancy)) };
+            for square in &other_pieces.knights {
+                if attacked.contains(square) {
+                    res += KNIGHT_ATTACK;
+                }
+            }
+            for square in &other_pieces.bishops {
+                if attacked.contains(square) {
+                    res += BISHIP_ATTACK;
+                }
+            }
+            for square in &other_pieces.rooks {
+                if attacked.contains(square) {
+                    res += ROOK_ATTACK;
+                }
+            }
+            for square in &other_pieces.queens {
+                if attacked.contains(square) {
+                    res += QUEEN_ATTACK;
+                }
+            }
+        }
+        res
     }
 
     pub fn test_eval(board: Board) -> Eval {

@@ -11,17 +11,20 @@ impl Branch {
     pub fn eval_position(&mut self, mobility: usize, depth: usize) -> Eval {
         match self.board.get_unchecked_game_state(mobility) {
             GameState::Ongoing => self.eval_heuristic(),
-            GameState::Finished(state) => match state {
-                // With a finished state, the evaluation is absolute.
-                FinishedState::Win(c, _) => match c {
-                    Colour::White => Eval::Mate(depth, Colour::White),
-                    Colour::Black => Eval::Mate(depth, Colour::Black),
-                },
-                FinishedState::Draw(_) => {
-                    debug!("Draw");
-                    Eval::Numeric(0.)
+            GameState::Finished(state) => {
+                self.game_over = true;
+                match state {
+                    // With a finished state, the evaluation is absolute.
+                    FinishedState::Win(c, _) => match c {
+                        Colour::White => Eval::Mate(depth, Colour::White),
+                        Colour::Black => Eval::Mate(depth, Colour::Black),
+                    },
+                    FinishedState::Draw(_) => {
+                        debug!("Draw");
+                        Eval::Numeric(0.)
+                    }
                 }
-            },
+            }
         }
     }
 }
