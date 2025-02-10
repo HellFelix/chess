@@ -1,9 +1,5 @@
 #include "king.h"
 #include <stdio.h>
-/***************************************\
-                Credit to
-            Code Moneky King
-\**************************************/
 
 // define bitboard type
 #define U64 unsigned long long

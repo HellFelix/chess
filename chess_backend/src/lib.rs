@@ -8,7 +8,7 @@ mod utils;
 use utils::fen::*;
 
 mod board;
-pub use board::{Board, ChessMove, FinishedState, GameState, MoveType};
+pub use board::{BitBoard, Board, ChessMove, FinishedState, GameState, MoveType};
 pub use utils::{
     extract_squares as wrap_extract_squares,
     fen::{

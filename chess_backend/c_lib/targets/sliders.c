@@ -1,11 +1,4 @@
 #include "sliders.h"
-/**************************************\
- *  Code by "Code Monkey King"
- *  Source
-https://github.com/maksimKorzh/chess_programming/blob/master/src/magics/magics.c
-\**************************************/
-
-// system headers
 #include <stdio.h>
 
 // bits manipulations
