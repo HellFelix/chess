@@ -1,3 +1,6 @@
+[![GitHub tag](https://img.shields.io/github/tag/HellFelix/chess?include_prereleases=&sort=semver&color=blue)](https://github.com/HellFelix/chess/releases/)
+[![License](https://img.shields.io/badge/License-MIT-blue)](#license)
+
 # Chess
 This project covers the making of a chess engine all the way from low level bitboard representation and movegeneration all the way up to high level move searching and evaluation algorithms. 
 See [engine documentation](./chess_engine/README.md) for usage.
