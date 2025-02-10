@@ -16,7 +16,7 @@ Using the [FICS games database](https://www.ficsgames.org/), this crate creates 
 
 For more information, see [openings documentation](./chess_openings/README.md).
 
-### Engine (Main Engine Program)
+### Engine (Main Engine Program - BRAIN)
 The engine itself splits the evaluation of a position into tow phases, first running preliminaty evaluation followed by a deep search. The search is split between the available threads, and thus it will probably perform better on machines with more cpus since more of the tree can be searched at the same time. Based on limited testing, the engine performs at a rating of about 2200.
 
 For more information, see [engine documentation](./chess_engine/README.md).

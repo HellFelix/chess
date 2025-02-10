@@ -1,4 +1,6 @@
-# Engine
+![logo](./logo.png "BRAIN logo")
+
+# Engine (BRAIN)
 This crate is the culmination of this project.
 
 ## Usage: Controllers and Engines
